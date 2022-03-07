@@ -12,6 +12,10 @@ const postSchema = mongoose.Schema({
   user: {
     ref: 'user',
     type: mongoose.Types.ObjectId
+  },
+  bibleVerse: {
+    type: String,
+    required: false
   }
 }, { timestamps: true });
 

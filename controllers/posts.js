@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Post = require('../models/post');
+const axios = require('axios');
 
 module.exports ={
   getAllPosts:
@@ -23,6 +24,17 @@ module.exports ={
 
   create:
   async (req, res) => {
+    var config = {
+      method: 'get',
+      url: `${process.env.BIBLE_API_URL}v1/bibles/06125adad2d5898a-01/chapters/GEN.2`,
+      headers: { 
+        'api-key': `${process.env.BIBLE_API_KEY}`
+      }
+    }
+
+  const responseBible = await axios(config);
+    console.log(responseBible.data.data.content);
+    req.body.bibleVerse=responseBible.data.data.content
     const post = await Post.create(req.body);
     res.send({
       error: false,
