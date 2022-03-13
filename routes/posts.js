@@ -34,4 +34,5 @@ router.get('/', controller.getAllPosts)
       .patch('/:id', controller.patch)
       .delete('/:id', controller.delete)
 
+
 module.exports = router;
