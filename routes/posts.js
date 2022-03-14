@@ -33,6 +33,11 @@ router.get('/', controller.getAllPosts)
       .post('/', controller.create)
       .patch('/:id', controller.patch)
       .delete('/:id', controller.delete)
+      .patch('/like/:id', controller.like)
 
 
 module.exports = router;
+
+
+//https://stackoverflow.com/questions/28006521/how-to-model-a-likes-voting-system-with-mongodb
+//https://www.mongodb.com/community/forums/t/how-to-store-users-liked-items/98397

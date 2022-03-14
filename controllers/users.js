@@ -36,44 +36,67 @@ module.exports ={
   },
 
   addFriend:
-  async (req, res) =>{
-    console.log(req.params.id);
-    console.log(req.body.friend);
-    await User.findByIdAndUpdate(req.params.id, {
-      $push: { friends: req.body.friend }
-    });
-    await User.findByIdAndUpdate(req.body.friend, {
-      $push: { friends: req.params.id }
-    });
-    const user1 = await User.findById(req.params.id);
-    const user2 = await User.findById(req.body.friend);
-    res.send({
-      error:false,
-      message: `Users with id #${user1._id} and #${user2._id} are now friends`,
-      user1 : user1,
-      user2 : user2
-    });
+    async (req, res) =>{
+    const bearerToken = req.get("Authorization");
+    const token = bearerToken.substring(7, bearerToken.length);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const activeUser = await User.findById(decoded.id);
+    const requestedFriend = await User.findById(req.body.friend);
+
+    if(requestedFriend){
+      if (activeUser.friends.includes(req.body.friend)){
+        return response(res, 400, "The user is allready your friend");
+      }else{
+        await User.findByIdAndUpdate(decoded.id, {
+          $push: { friends: req.body.friend }
+        });
+        await User.findByIdAndUpdate(req.body.friend, {
+          $push: { friends: decoded.id }
+        });
+        const user1 = await User.findById(decoded.id);
+        const user2 = await User.findById(req.body.friend);
+        res.send({
+          error:false,
+          message: `Users with id #${user1.id} and #${user2.id} are now friends`,
+          user1 : user1,
+          user2 : user2
+        });
+      }
+  }else{
+    return response(res, 400, 'Bad request. User does not exist in the DB.');
+    }
   },
 
   deleteFriend:
   async (req, res) =>{
-    console.log(req.params.id);
-    console.log(req.body.friend);
+    const bearerToken = req.get("Authorization");
+    const token = bearerToken.substring(7, bearerToken.length);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const activeUser = await User.findById(decoded.id);
+    const exFriend = await User.findById(req.body.friend);
 
-    await User.findByIdAndUpdate(req.params.id, {
-      $pull: { friends: req.body.friend }
-    });
-    await User.findByIdAndUpdate(req.body.friend, {
-      $pull: { friends: req.params.id }
-    });
-    const user1 = await User.findById(req.params.id);
-    const user2 = await User.findById(req.body.friend);
-    res.send({
-      error:false,
-      message: `Users with id #${user1._id} and #${user2._id} are not any more friends`,
-      user1 : user1,
-      user2 : user2
-    });
+    if(exFriend){
+      if (activeUser.friends.includes(req.body.friend)){    
+        await User.findByIdAndUpdate(decoded.id, {
+          $pull: { friends: req.body.friend }
+        });
+        await User.findByIdAndUpdate(req.body.friend, {
+          $pull: { friends: decoded.id }
+        });
+        const user1 = await User.findById(decoded.id);
+        const user2 = await User.findById(req.body.friend);
+        res.send({
+          error:false,
+          message: `Users with id #${user1.id} and #${user2.id} are not any more friends`,
+          user1 : user1,
+          user2 : user2
+        });
+      }else{
+        return response(res, 400, "There is not such user in your freind list");
+      }
+    }else{
+      return response (res, 400, 'The user is not your friend, you can not remove him from your friendlist');
+    }
   },
   
 
@@ -102,7 +125,7 @@ module.exports ={
     try {
       let user = await User.findOne({ email: req.body.email });
       if (user) {
-        return response(res, 400, 'Bad request. User exists with the provided email.');
+       
       }
   
       req.body.password = bcrypt.hashSync(req.body.password);
@@ -129,7 +152,8 @@ module.exports ={
        */
       const user = await User.findOne({ email: req.body.email }); //pravime povik vo baza i barame dali emailot vo body go ima vo baza
       if (user) {// ako emailot go ima ovde ke vrati true i prodolzuva vo sledniot red da go sporedi passwordot
-        if (bcrypt.compareSync(req.body.password, user.password)) {//ovde proveruva dali passwordot vnesen vo body e isto so toj vo baza (so bcrypt.compareSync vrsi enkripcija na passot od body i proveruva dali e istiot hash so toj vo baza)
+        if (bcrypt.compareSync(req.body.password, user.password)) {
+          //ovde proveruva dali passwordot vnesen vo body e isto so toj vo baza (so bcrypt.compareSync vrsi enkripcija na passot od body i proveruva dali e istiot hash so toj vo baza)
           // ako se sovpadnat passwordite treba da vrati token
           //token = plain data (JSON payload) + secret key za potpisuvanje na token + config options
           // tokenot se sostoi od = payload + kluch za enkripcija + config opcii (najcesto kolku vreme ke trae tokenot)

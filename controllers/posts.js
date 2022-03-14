@@ -58,6 +58,24 @@ module.exports ={
     });
   },
 
+  like:
+  async (req, res) =>{
+    await Post.findByIdAndUpdate(req.params.id, {
+      $push: { likes: req.body.friend }
+    });
+    await User.findByIdAndUpdate(req.body.friend, {
+      $push: { friends: req.params.id }
+    });
+    const user1 = await User.findById(req.params.id);
+    const user2 = await User.findById(req.body.friend);
+    res.send({
+      error:false,
+      message: `Users with id #${user1._id} and #${user2._id} are now friends`,
+      user1 : user1,
+      user2 : user2
+    });
+  },
+
   patch:
   async (req, res) => {
     await Post.findByIdAndUpdate(req.params.id, req.body);

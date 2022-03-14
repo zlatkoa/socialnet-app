@@ -13,6 +13,10 @@ const postSchema = mongoose.Schema({
     ref: 'user',
     type: mongoose.Types.ObjectId
   },
+  likes: [{
+    type: mongoose.Types.ObjectId,
+    ref:'user'    
+  }],
   bibleVerse: {
     type: String,
     required: false
