@@ -35,6 +35,48 @@ module.exports ={
     });
   },
 
+  addFriend:
+  async (req, res) =>{
+    console.log(req.params.id);
+    console.log(req.body.friend);
+    await User.findByIdAndUpdate(req.params.id, {
+      $push: { friends: req.body.friend }
+    });
+    await User.findByIdAndUpdate(req.body.friend, {
+      $push: { friends: req.params.id }
+    });
+    const user1 = await User.findById(req.params.id);
+    const user2 = await User.findById(req.body.friend);
+    res.send({
+      error:false,
+      message: `Users with id #${user1._id} and #${user2._id} are now friends`,
+      user1 : user1,
+      user2 : user2
+    });
+  },
+
+  deleteFriend:
+  async (req, res) =>{
+    console.log(req.params.id);
+    console.log(req.body.friend);
+
+    await User.findByIdAndUpdate(req.params.id, {
+      $pull: { friends: req.body.friend }
+    });
+    await User.findByIdAndUpdate(req.body.friend, {
+      $pull: { friends: req.params.id }
+    });
+    const user1 = await User.findById(req.params.id);
+    const user2 = await User.findById(req.body.friend);
+    res.send({
+      error:false,
+      message: `Users with id #${user1._id} and #${user2._id} are not any more friends`,
+      user1 : user1,
+      user2 : user2
+    });
+  },
+  
+
   patch:
   async (req, res) => {
     await User.findByIdAndUpdate(req.params.id, req.body);

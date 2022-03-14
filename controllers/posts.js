@@ -15,7 +15,7 @@ ac.deny('user').createOwn('post'); //ne mu dozvoluvame na admin da kreira post
 module.exports ={
   getAllPosts:
   async (req, res) => {
-    const posts = await Post.find();
+    const posts = await Post.find().populate('user');
     res.send({
       error: false,
       message: 'All posts from the database',
@@ -49,7 +49,6 @@ module.exports ={
     }
 
   const responseBible = await axios(config);
-    console.log(responseBible.data.data.content);
     req.body.bibleVerse=responseBible.data.data.content
     const post = await Post.create(req.body);
     res.send({

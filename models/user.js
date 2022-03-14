@@ -20,7 +20,12 @@ const userSchema = mongoose.Schema({
   password: {
     type: String,
     required: true
-  }
+  },
+  friends: [{
+    type: mongoose.Types.ObjectId,
+    ref:'user'    
+  }]
+
 }, { timestamps: true });
 
 module.exports = mongoose.model('user', userSchema);
