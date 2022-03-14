@@ -12,7 +12,7 @@ router.use(jwt({
 }).unless({
       path: [
             {
-                  url: '/', methods: ['GET']//ovde definirame na koi ruti ne treba avtentikacija, odnosno da gi otvara bez da treba da se najavua korisnikot
+                  url: '/comments/', methods: ['GET']//ovde definirame na koi ruti ne treba avtentikacija, odnosno da gi otvara bez da treba da se najavua korisnikot
             }
       ]
 }));
@@ -30,5 +30,6 @@ router.get('/', controller.getAllComments)
       .post('/', controller.create)
       .patch('/:id', controller.patch)
       .delete('/:id', controller.delete)
+      .patch('/like/:id', controller.like)
 
 module.exports = router;

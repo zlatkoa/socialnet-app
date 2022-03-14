@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 const Post = require('../models/post');
 const axios = require('axios');
-const responseHandler=require('../lib/response_handler');
+const response=require('../lib/response_handler');
 const AccessControl = require ('accesscontrol');
 const ac = new AccessControl();
-
+const jwt = require ('jsonwebtoken');
 
 //definiram roles za sekoj user i sto e dostapno na role da pravi vo ovoj kontroler so postovi
 ac.grant('admin').createOwn('post'); //mu dozvoluvame na user da moze da kreira i da poseduva post
@@ -36,7 +36,7 @@ module.exports ={
   async (req, res) => {
     const permission = ac.can(req.user.role).createOwn('post');//proveruvame dali roljata na user-ot koj sto pravi request ima dozvola da kreira post
     if(!permission.granted){//ako nema dozvola za kreiranje vraka 401 i prekinuva funkcijata, vo sprotivno prodolzuva dolu kodot
-      responseHandler(res, 401, `Cannot create posts with role: ${req.user.role}`);
+      response(res, 401, `Cannot create posts with role: ${req.user.role}`);
       return;
     }
   
@@ -60,20 +60,30 @@ module.exports ={
 
   like:
   async (req, res) =>{
-    await Post.findByIdAndUpdate(req.params.id, {
-      $push: { likes: req.body.friend }
-    });
-    await User.findByIdAndUpdate(req.body.friend, {
-      $push: { friends: req.params.id }
-    });
-    const user1 = await User.findById(req.params.id);
-    const user2 = await User.findById(req.body.friend);
-    res.send({
-      error:false,
-      message: `Users with id #${user1._id} and #${user2._id} are now friends`,
-      user1 : user1,
-      user2 : user2
-    });
+    const bearerToken = req.get("Authorization");
+    const token = bearerToken.substring(7, bearerToken.length);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const activePost = await Post.findById(req.params.id);
+
+    if (activePost){
+      
+      if(activePost.likes.includes(decoded.id)){
+        return response (res, 400, "You allready liked this post");
+      }else{    
+        await Post.findByIdAndUpdate(req.params.id, {
+          $push: { likes: decoded.id }
+        });
+        
+        const likedPost = await Post.findById(req.params.id);
+        var likes = likedPost.likes.length;
+        res.send({
+          error:false,
+          message: `You liked post #${req.params.id}. The post have ${likes} likes`,
+        });
+      }
+    }else{
+      return response (res, 400, "Requested post does not exist in the database");
+    }
   },
 
   patch:
