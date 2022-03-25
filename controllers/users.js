@@ -3,6 +3,7 @@ const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const response = require('../lib/response_handler');
 const jwt = require ('jsonwebtoken');
+const Friendship = require('../models/friendship');
 
 module.exports ={
   getAllUsers:
@@ -36,36 +37,79 @@ module.exports ={
   },
 
   addFriend:
-    async (req, res) =>{
-    const bearerToken = req.get("Authorization");
-    const token = bearerToken.substring(7, bearerToken.length);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    const activeUser = await User.findById(decoded.id);
-    const requestedFriend = await User.findById(req.body.friend);
-
-    if(requestedFriend){
-      if (activeUser.friends.includes(req.body.friend)){
-        return response(res, 400, "The user is allready your friend");
-      }else{
-        await User.findByIdAndUpdate(decoded.id, {
-          $push: { friends: req.body.friend }
-        });
-        await User.findByIdAndUpdate(req.body.friend, {
-          $push: { friends: decoded.id }
-        });
-        const user1 = await User.findById(decoded.id);
-        const user2 = await User.findById(req.body.friend);
-        res.send({
-          error:false,
-          message: `Users with id #${user1.id} and #${user2.id} are now friends`,
-          user1 : user1,
-          user2 : user2
-        });
+  async (req, res) => {
+    console.log(req.user);
+    try {
+      const userTwo = await User.findById(req.params.id);
+  
+      if (!userTwo) {
+        response(res, 404, 'Cannot add to friends a user that doesn\'t exist.');
+        return;
       }
-  }else{
-    return response(res, 400, 'Bad request. User does not exist in the DB.');
+  
+      const friendship = await Friendship.create({
+        user_one: req.user.id,
+        user_two: userTwo._id
+      })
+  
+      response(res, 201, `User with id #${req.user.id} has added to friends user with id #${req.params.id}.`, { friendship })
+    } catch (error) {
+      response(res, 500, error.message, { error })
     }
   },
+
+  getAllFriendships:
+  async (req, res) => {
+    const friendships = await Friendship.find();
+    res.send({
+      error: false,
+      message: 'All friendships from the database',
+      friendships: friendships
+    });
+  },
+
+
+
+
+
+  db.friendships.find({ $or: 
+    [
+      { $and: [{ user_one: ObjectId("622903a8fc92d962ba45227c") }, { user_two: ObjectId("62323dbb246d0671f281b955") }] }, 
+      { $and: [{ user_one: ObjectId("62323dbb246d0671f281b955") }, { user_two: ObjectId("622903a8fc92d962ba45227c") }] }
+    ] 
+  })
+
+
+  //   async (req, res) =>{
+  //   const bearerToken = req.get("Authorization");
+  //   const token = bearerToken.substring(7, bearerToken.length);
+  //   const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+  //   const activeUser = await User.findById(decoded.id);
+  //   const requestedFriend = await User.findById(req.body.friend);
+
+  //   if(requestedFriend){
+  //     if (activeUser.friends.includes(req.body.friend)){
+  //       return response(res, 400, "The user is allready your friend");
+  //     }else{
+  //       await User.findByIdAndUpdate(decoded.id, {
+  //         $push: { friends: req.body.friend }
+  //       });
+  //       await User.findByIdAndUpdate(req.body.friend, {
+  //         $push: { friends: decoded.id }
+  //       });
+  //       const user1 = await User.findById(decoded.id);
+  //       const user2 = await User.findById(req.body.friend);
+  //       res.send({
+  //         error:false,
+  //         message: `Users with id #${user1.id} and #${user2.id} are now friends`,
+  //         user1 : user1,
+  //         user2 : user2
+  //       });
+  //     }
+  // }else{
+  //   return response(res, 400, 'Bad request. User does not exist in the DB.');
+  //   }
+  // },
 
   deleteFriend:
   async (req, res) =>{
